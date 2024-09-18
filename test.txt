@@ -1,0 +1,22 @@
+i{OPEN}
+a{LOCKED}
+
+s{ n{OPEN}  t{ i{PUSH} d{CLOSED} }
+            t{ i{PULL} d{OPEN} }
+            t{ i{TURN} d{OPEN} } 
+}
+
+s{
+  n{ CLOSED }
+  t{ i{PUSH} d{CLOSED} }
+  t{ i{PULL} d{OPEN} }
+  t{ i{TURN} d{LOCKED} }
+  
+}
+
+s{
+  n{ LOCKED }
+  t{ i{PUSH} d{LOCKED} }
+  t{ i{PULL} d{LOCKED}}
+  t{ i{TURN} d{CLOSED}}
+}

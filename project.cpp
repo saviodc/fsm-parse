@@ -318,10 +318,11 @@ void parseStates(){
 	output_file<<"int main(){"<<endl;
 	output_file<<"while(1){"<<endl;
 	output_file<<"string input;"<<endl;
-	output_file<<"cout<<\"current state:\"<<state<<\" enter signal\";"<<endl;
+	output_file<<"cout<<\"current state:\"<<state<<\" enter signal: \";"<<endl;
 	output_file<<"cin>>input;"<<endl;
 	output_file<<"manage_state(input);"<<endl;
-	output_file<<"cout<<\" new state=\"<<state<<endl;"<<endl;
+	output_file<<"string accepted = state == "<<save_acc<<"? \"true\": \"false\";"<<endl;
+	output_file<<"cout<<\" new state= \"<<state<<\"  accepted: \"<<accepted<<endl;"<<endl;
 	output_file<<"}"<<endl<<"}"<<endl;
 	output_file.close();
 }

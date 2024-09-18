@@ -4,6 +4,8 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <functional>
+
 
 
 
@@ -23,7 +25,7 @@
 std::string ReadSpecFile(std::string fileName){
   std::cout<<"Reading specifications file "<<fileName<<std::endl;
   std::string out;
-  std::ifstream inputFile( fileName );
+  std::ifstream inputFile(fileName);
   std::string line;
   out = "";
   std::string n1;
@@ -35,6 +37,7 @@ std::string ReadSpecFile(std::string fileName){
    line.erase( std::remove(line.begin(), line.end(),' '), line.end() );
    out.append(line);
   }
+  inputFile.close();
   //cout<<" input="<< input<<endl;
   return out;
 }

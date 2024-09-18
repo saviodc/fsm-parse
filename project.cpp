@@ -5,34 +5,42 @@
 #include "out.h"
 using namespace std;
 
+struct transition{
+	string in= "";
+	string destination= "";
+	
+	bool input_found = false, destination_found= false;
+	bool fin(){
+		return input_found && destination_found;
+	}
+	transition(string k, string v){in = k; destination = v;}
+	transition();
+	void set_key(string s){in = s;input_found=true;}
+	void set_val(string s){destination = s; destination_found = true;} 
+};
+
 struct state {
     string name;
-    map<string, state*> transitions; 
+    vector<transition> transitions;
 	bool accepting = false, init = false;
 	
     state(string n) : name(n) {}
 	state(){}
-    void add(const string& k, state* v) {
-        transitions[k] = v; 
+    void add(transition tr) {
+        transitions.push_back(tr);
     }
 
-    state(const state&) = delete;
-    
-    state* transition(string s){
-		return transitions.at(s);
-	}
-};
-enum parse_state{
-	R, A, S, I, T, It, D, N
+    //state(const state&) = delete;
 };
 
-vector<string> code;
+
+enum parse_state{
+	R, A, S, I, T, It, D, N, OBs, OBt, OBd, COLd,OBit, COLit, OBn, COLn,OBa, COLa, OBi, COLi
+};
+
 map<string, state>all_states;
-stack<string> braces;//checks if braces are closed 
 state editing;
-int i = 0;
-string input;
-string transition_key;
+transition editing_trans;
 parse_state cur_state = R;
 
 class ParseError : public std::exception {
@@ -47,98 +55,159 @@ public:
     }
 };
 
-void parse(string str){
+string input;
+void parse(char c){
     switch(cur_state){
-        case R: {
-            if(str.length() != 1) throw ParseError("Illegal amount of args @ R: " + str);
-            char c = str[0];
+        case R: 
             if(c == 's') cur_state = S;
             else if(c == 'a') cur_state = A;
             else if(c == 'i') cur_state = I;
-            else throw ParseError("Bad char passed to case R: " + str);
-            if(input[i++] != '{') throw ParseError("Missing { @ R:");
-            break;
-        }
-        case A: {
-            auto it = all_states.find(str);  // Use str instead of "5"
-            if (it != all_states.end()) {
-                it->second.accepting = true;
-            } else {
-                state to_add(str);  // Use parentheses instead of equals
-                to_add.accepting = true;  // Set the accepting state
-                all_states[str] = to_add;             
-             }
-              if(input[i++] != '}') throw ParseError("Missing } @ A:");
-              cur_state = R;
-            break;
-        }
-        case S: {
-			 if(str.length() != 1) throw ParseError("Illegal amount of args @ R: " + str);
+            else throw ParseError("Bad char passed to case R: " + string(1,c));
+        break;
+        
+        case A: 
+            if(c == '{')cur_state = OBa;
+            else throw ParseError("Bad char passed to case A: " + string(1,c));
+        break;
+        
+        case S: 
 			 editing = state();
-			 char c = str[0];
-			 if(c == 't') cur_state = S;
-			 else if(c == 'n') cur_state = A;
-             else throw ParseError("Bad char passed to case S: " + str);
-			 if(input[i++] != '{') throw ParseError("Missing { @ S:");
-             break;
-        }
-        case I: {
-            auto it = all_states.find(str);
-            if (it != all_states.end()) {
-                it->second.init = true;
-            } else {
-                state to_add(str);
-                to_add.init = true;
-                all_states[str] = to_add;             
-            }
-            if(input[i++] != '}') throw ParseError("Missing } @ I:");
-            cur_state = R;
-            break;
-        }
-        case T:{
-			if(str.length() != 1) throw ParseError("Illegal amount of args @ R: " + str);
-			char c = str[0];
-			if(c == 'i') cur_state = It;
-			else throw ParseError("Bad char passed to case S: " + str);
-			if(input[i++] != '{') throw ParseError("Missing { @ S:");
-		}
-        case It:{
-			transition_key = str;
-			if(input[i++] != '}') throw ParseError("Missing } @ It:");
-			if(input[i++] != 'd') throw ParseError("Missing d @ It:");
-			if(input[i++] != '{') throw ParseError("Missing { @ It:");
-			cur_state = D;
-			break;
-		}
-        case D: {
-			auto it = all_states.find(str);
-            if (it != all_states.end()) {
-				editing.add(transition_key, &(it->first));
-            } else {
-                editing.name = str;
-                all_states[str] = editing;   
-                
-            }
-            if(input[i++] != '{') throw ParseError("Missing { @ I:");
-            cur_state = R;
-			break;
-		}
+			 if(c == '{')cur_state = OBs;
+			 else throw ParseError("Bad char passed to case S: " + string(1,c));
+        break;
+        
+        case I: 
+			editing_trans = transition();
+            if(c == '{')cur_state = OBi;
+			else throw ParseError("Bad char passed to case I: " + string(1,c));
+        break;
+        
+        case T:
+			if(c == '{')cur_state = OBt;
+			else throw ParseError("Bad char passed to case T: " + string(1,c));
+        break;
+		
+        case It:
+			if(c == '{')cur_state = OBit;
+			else throw ParseError("Bad char passed to case It: " + string(1,c));
+        break;
+		
+        case D: 
+			if(c == '{')cur_state = OBd;
+			else throw ParseError("Bad char passed to case D: " + string(1,c));
+        break;
+		
         case N:
-            break;
-    }
+			if(c == '{')cur_state = OBn;
+			else throw ParseError("Bad char passed to case N: " + string(1,c));
+        break;
+        
+        case OBa:
+			input = "";
+			if(c != '}' || c != '}') cur_state = COLa;
+			else throw ParseError("Bad char passed to case OBa: " + string(1,c));
+		break;
+		
+		case OBi:
+			input = "";
+			if(c != '}' || c != '}') cur_state = COLi;
+			else throw ParseError("Bad char passed to case OBi: " + string(1,c));
+		break;
+		
+		case OBit:
+			input = "";
+			if(c != '}' || c != '}') cur_state = COLit;
+			else throw ParseError("Bad char passed to case OBit: " + string(1,c));
+		break;
+		
+		case OBd:
+			input = "";
+			if(c != '}' || c != '}') cur_state = COLd;
+			else throw ParseError("Bad char passed to case OBd: " + string(1,c));
+		break;
+		
+		case OBn:
+			input = "";
+			if(c != '}' || c != '}') cur_state = COLn;
+			else throw ParseError("Bad char passed to case OBn: " + string(1,c));
+		break;
+		
+		case OBs:
+			if(c == 't') cur_state = T;
+			else if(c == 'n') cur_state = N;
+			else throw ParseError("Bad char passed to case OBs: " + string(1,c));
+		break;
+		
+		case COLi:
+			if(c =='{')throw ParseError("Errant '{' passed to case COLi");
+			else if(c == '}'){
+				if(input == "")throw ParseError("No args passed to case COLi");
+				auto it = all_states.find(input);  
+				if (it != all_states.end()) {
+					it->second.init = true;
+				} else {
+					state to_add(input);  
+					to_add.init = true;  
+					all_states[input] = to_add;             
+				}
+				cur_state = R;
+			}else{
+				input.push_back(c);
+			}
+		break;
+		
+		case COLa:
+			if(c =='{')throw ParseError("Errant '{' passed to case COLi");
+			else if(c == '}'){
+				if(input == "")throw ParseError("No args passed to case COLi");
+				auto it = all_states.find(input);  
+				if (it != all_states.end()) {
+					it->second.accepting = true;
+				} else {
+					state to_add(input);  
+					to_add.accepting = true;  
+					all_states[input] = to_add;             
+				}
+				cur_state = R;
+			}else{
+				input.push_back(c);
+			}
+		break;
+		
+		case COLn:
+			if(c =='{')throw ParseError("Errant '{' passed to case COLn");
+			else if(c == '}'){
+				if(input == "")throw ParseError("No args passed to case COLn");
+				if(editing.name != "")throw ParseError("Attempted name overrite at COLn");
+				editing.name = input;
+				input = "";
+				cur_state = OBs;
+			}else{
+				input.push_back(c);
+			}
+		break;
+		
+		case OBt:
+			if(editing_trans.fin()){
+				if(c == '}'){
+					editing.add(editing_trans);
+				}else throw ParseError("Errant } recieved when transition not poluater at OBt");
+			}else{
+				if(c == 'i'){
+					//if(editing_trans.
+					cur_state= I;
+				}else if(c == 'd'){
+					cur_state = D;
+				}
+			}
+		break;
+		
+	}
 }
 
-void parse_string(){
-	parse(string(1,input[i++]));
-	while(i < input.length()){
-		string cur = "";
-		//char to_process = input[i++];
-		//to_process = input[i++];
-		while(input[i]!= '{'||input[i] != '}'){
-			cur.push_back(input[i++]);
-		}
-		//if(to_process != '}')throw ParseError("Expected {, found :" + to_process);
-		parse(cur);
+void parse_string(string str){
+	for(char c : str){
+		parse(c);
 	}
 }
 
@@ -146,6 +215,6 @@ void parse_string(){
 int main(){
 	string fromFile = ReadSpecFile(getString());
 	cout<<fromFile;
-	parse_string();
+	parse_string(fromFile);
 	return 0;
 }

@@ -34,7 +34,7 @@ struct state {
 
 
 enum parse_state{
-	R, A, S, I, T, It, D, N, OBs, OBt, OBd, COLd,OBit, COLit, OBn, COLn,OBa, COLa, OBi, COLi, fromT
+	R, A, S, I, T, It, D, N, OBs, OBt, COLd, COLit, COLn, COLa,  COLi, fromT
 };
 
 map<string, state>all_states;
@@ -66,18 +66,19 @@ void parse(char c){
         break;
         
         case A: 
-            if(c == '{')cur_state = OBa;
+			input = "";
+            if(c == '{')cur_state = COLa;
             else throw ParseError("Bad char passed to case A: " + string(1,c));
         break;
-        
+		
         case fromT:
 			if(c == '}'){
 				if(editing.name=="")throw ParseError("No name parsed");
-				if(editing.transitions.empty())throw ParseError("No transition(s) parsed");
+				//if(editing.transitions.empty())throw ParseError("No transition(s) parsed");
 				auto it = all_states.find(editing.name);  
 				if (it != all_states.end()) {
 					editing.accepting =it->second.accepting;
-					editing.init = it->second.accepting;
+					editing.init = it->second.init;
 					
 				}
 				all_states[editing.name] = editing;
@@ -96,60 +97,35 @@ void parse(char c){
         break;
         
         case I: 
-			editing_trans = transition();
-            if(c == '{')cur_state = OBi;
+			input = "";
+            if(c == '{')cur_state = COLi;
 			else throw ParseError("Bad char passed to case I: " + string(1,c));
         break;
         
         case T:
+			editing_trans = transition();//switched from I
 			if(c == '{')cur_state = OBt;
 			else throw ParseError("Bad char passed to case T: " + string(1,c));
         break;
 		
         case It:
-			if(c == '{')cur_state = OBit;
+			input = "";
+			if(c == '{')cur_state = COLit;
 			else throw ParseError("Bad char passed to case It: " + string(1,c));
         break;
 		
+		
         case D: 
-			if(c == '{')cur_state = OBd;
+			input = "";
+			if(c == '{')cur_state = COLd;
 			else throw ParseError("Bad char passed to case D: " + string(1,c));
         break;
 		
         case N:
-			if(c == '{')cur_state = OBn;
+			input = "";
+			if(c == '{')cur_state = COLn;
 			else throw ParseError("Bad char passed to case N: " + string(1,c));
         break;
-        
-        case OBa:
-			input = "";
-			if(c != '}' || c != '}') cur_state = COLa;
-			else throw ParseError("Bad char passed to case OBa: " + string(1,c));
-		break;
-		
-		case OBi:
-			input = "";
-			if(c != '}' || c != '}') cur_state = COLi;
-			else throw ParseError("Bad char passed to case OBi: " + string(1,c));
-		break;
-		
-		case OBit:
-			input = "";
-			if(c != '}' || c != '}') cur_state = COLit;
-			else throw ParseError("Bad char passed to case OBit: " + string(1,c));
-		break;
-		
-		case OBd:
-			input = "";
-			if(c != '}' || c != '}') cur_state = COLd;
-			else throw ParseError("Bad char passed to case OBd: " + string(1,c));
-		break;
-		
-		case OBn:
-			input = "";
-			if(c != '}' || c != '}') cur_state = COLn;
-			else throw ParseError("Bad char passed to case OBn: " + string(1,c));
-		break;
 		
 		case OBs:
 			if(c == 't') cur_state = T;
@@ -200,7 +176,7 @@ void parse(char c){
 				if(editing.name != "")throw ParseError("Attempted name overrite at COLn");
 				editing.name = input;
 				input = "";
-				cur_state = OBs;
+				cur_state = fromT;
 			}else{
 				input.push_back(c);
 			}
@@ -268,16 +244,19 @@ void checkAll(){
 			if(found_init)throw ParseError("Error");
 			found_init = true;
 			save_init = it->first;
+			cout<<"init"<<save_init;
 		}
 		if(it->second.accepting){
 			if(found_acc)throw ParseError("Error");
 			found_acc = true;
 			save_acc = it->first;
+			cout<<"init"<<save_acc;
 		}
 		for (auto sec_it = it->second.transitions.begin(); sec_it != it->second.transitions.end(); ++sec_it) {
 			if(all_states.find((*sec_it).destination)==all_states.end())throw ParseError("Error");
 		}
     }
+    if(!found_init || !found_acc)throw ParseError("Didnt find init | acc");
     
 }
 void parseStates(){
@@ -301,14 +280,18 @@ void parseStates(){
 	for (auto it = all_states.begin(); it != all_states.end(); ++it) {
 		output_file<<"case "<<it->first<<":"<<endl;	
 		auto sec_it = it->second.transitions.begin();
+		if(sec_it != it->second.transitions.end()){
+			
+		
 		output_file<<"if(str == \""<<(*sec_it).in<<"\")";
 		output_file<<"state = "<<(*sec_it).destination<<";"<<endl;
 		sec_it++;
+		}
 		for (; sec_it != it->second.transitions.end(); ++sec_it) {
 			output_file<<"else if(str == \""<<(*sec_it).in<<"\")";
 			output_file<<"state = "<<(*sec_it).destination<<";"<<endl;
 		}
-		output_file<<"else throw invalid_argument(\"Invalid input\");"<<endl;
+		//output_file<<"else throw invalid_argument(\"Invalid input\");"<<endl;
 		output_file<<"break;"<<endl<<endl;
 	}
 	

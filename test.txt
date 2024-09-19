@@ -15,7 +15,7 @@ s{
 
 s{
   n{S2}
-  t{ i{t} d{S33} }
+  t{ i{t} d{S3} }
   t{ i{n} d{S0}}
 }
 s{ n{ S3 }}
